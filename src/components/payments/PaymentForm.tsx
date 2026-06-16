@@ -228,7 +228,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
           body: {
             amount: numericAmount,
             userId: userId ?? null,
-            reference: reference || null,
+            reference: finalReference || null,
             customerName: customerName || null,
           },
         });
@@ -288,7 +288,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
           amount: numericAmount,
           phone: cleanPhone,
           userId: userId ?? null,
-          reference: reference || null,
+          reference: finalReference || null,
         },
       });
 
