@@ -199,11 +199,11 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
     }
 
     if (!reference) {
-      setErrorMsg("Chagua reference (Zaka, Sadaka, RM au Other)");
+      setErrorMsg("Please select a reference (Zaka, Sadaka, RM or Other)");
       return;
     }
     if (reference === "Other" && !referenceOther.trim()) {
-      setErrorMsg("Tafadhali eleza reference yako");
+      setErrorMsg("Please describe your reference");
       return;
     }
 
@@ -487,7 +487,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 disabled={paymentState !== "form"}
                 className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
               >
-                <option value="">-- Chagua reference --</option>
+                <option value="">-- Select reference --</option>
                 {REFERENCE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -497,7 +497,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                   type="text"
                   value={referenceOther}
                   onChange={(e) => setReferenceOther(e.target.value)}
-                  placeholder="Eleza reference yako"
+                  placeholder="Describe your reference"
                   disabled={paymentState !== "form"}
                   maxLength={100}
                   className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
@@ -570,7 +570,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 disabled={paymentState !== "form"}
                 className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
               >
-                <option value="">-- Chagua reference --</option>
+                <option value="">-- Select reference --</option>
                 {REFERENCE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -580,7 +580,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                   type="text"
                   value={referenceOther}
                   onChange={(e) => setReferenceOther(e.target.value)}
-                  placeholder="Eleza reference yako"
+                  placeholder="Describe your reference"
                   disabled={paymentState !== "form"}
                   maxLength={100}
                   className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
