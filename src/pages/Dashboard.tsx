@@ -19,7 +19,7 @@ import PledgeGoalForm from "@/components/dashboard/PledgeGoalForm";
 import ProjectsView from "@/components/dashboard/ProjectsView";
 import ChurchSettingsForm from "@/components/dashboard/ChurchSettingsForm";
 import { useIsAdmin } from "@/hooks/useAdmin";
-import { useChurchSettings, useChurchTotalCollected } from "@/hooks/useChurchSettings";
+import { useChurchSettings, useChurchTotalCollected, useChurchTotalPledges } from "@/hooks/useChurchSettings";
 
 // Icons
 import { 
