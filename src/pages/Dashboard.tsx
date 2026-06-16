@@ -403,6 +403,7 @@ Member • Chuo Kikuu SDA Church
             percentage: (bestGroup as any).percentage ?? 0,
           } : null}
           myRemainingGoal={balance}
+          totalPledges={isAdmin ? churchTotalPledges : undefined}
         />
 
         </motion.div>
