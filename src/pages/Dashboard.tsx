@@ -213,6 +213,7 @@ const Dashboard = () => {
   const { data: isAdmin = false } = useIsAdmin(queryUserId);
   const { data: churchSettings } = useChurchSettings();
   const { data: churchTotalCollected = 0 } = useChurchTotalCollected();
+  const { data: churchTotalPledges = 0 } = useChurchTotalPledges();
 
   // Handle null publicData gracefully (no more mock fallback)
   const safePublicData = publicData || { total_collected: 0, active_members: 0, best_group: null, groups_leaderboard: [], current_project: null };
