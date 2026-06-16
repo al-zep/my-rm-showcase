@@ -64,6 +64,22 @@ export const useChurchTotalCollected = () => {
   });
 };
 
+export const useChurchTotalPledges = () => {
+  return useQuery({
+    queryKey: ["church-total-pledges", currentYear()],
+    queryFn: async (): Promise<number> => {
+      const client = getSupabaseClient();
+      const { data, error } = await client
+        .from("pledges")
+        .select("pledge_amount")
+        .eq("year", currentYear());
+      if (error) return 0;
+      return (data ?? []).reduce((sum, p: any) => sum + Number(p.pledge_amount || 0), 0);
+    },
+    refetchInterval: 30_000,
+  });
+};
+
 export const useUpdateChurchSettings = () => {
   const qc = useQueryClient();
   return useMutation({

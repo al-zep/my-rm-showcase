@@ -19,7 +19,7 @@ import PledgeGoalForm from "@/components/dashboard/PledgeGoalForm";
 import ProjectsView from "@/components/dashboard/ProjectsView";
 import ChurchSettingsForm from "@/components/dashboard/ChurchSettingsForm";
 import { useIsAdmin } from "@/hooks/useAdmin";
-import { useChurchSettings, useChurchTotalCollected } from "@/hooks/useChurchSettings";
+import { useChurchSettings, useChurchTotalCollected, useChurchTotalPledges } from "@/hooks/useChurchSettings";
 
 // Icons
 import { 
@@ -213,6 +213,7 @@ const Dashboard = () => {
   const { data: isAdmin = false } = useIsAdmin(queryUserId);
   const { data: churchSettings } = useChurchSettings();
   const { data: churchTotalCollected = 0 } = useChurchTotalCollected();
+  const { data: churchTotalPledges = 0 } = useChurchTotalPledges();
 
   // Handle null publicData gracefully (no more mock fallback)
   const safePublicData = publicData || { total_collected: 0, active_members: 0, best_group: null, groups_leaderboard: [], current_project: null };
@@ -402,6 +403,7 @@ Member • Chuo Kikuu SDA Church
             percentage: (bestGroup as any).percentage ?? 0,
           } : null}
           myRemainingGoal={balance}
+          totalPledges={isAdmin ? churchTotalPledges : undefined}
         />
 
         </motion.div>
