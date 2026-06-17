@@ -1,35 +1,92 @@
 import { useEffect, useState } from "react";
 import { isStandalonePWA } from "@/lib/pwa";
-
-const STORAGE_KEY = "pwa_entered_v1";
+import PaymentDialog from "@/components/payments/PaymentDialog";
 
 /**
  * Gate shown ONLY when the app is launched as an installed PWA
- * (display-mode: standalone). Browser/website users bypass this entirely.
+ * (display-mode: standalone). Browser/website users bypass this entirely
+ * and see the normal site.
  *
- * Shows a startup screen with only the "Press Here to Contribute" button.
- * After click, the regular app renders for the rest of the session.
+ * In PWA mode the website is NEVER rendered. The flow is:
+ *   1. Splash screen (logo + "Chuo Kikuu SDA Church") for ~2s
+ *   2. Contribute screen with a single "Press Here to Contribute" button
+ *   3. Tapping the button opens the contribution dialog
  */
 export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [standalone, setStandalone] = useState(false);
-  const [entered, setEntered] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [payOpen, setPayOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const isPwa = isStandalonePWA();
     setStandalone(isPwa);
     if (isPwa) {
-      const already = typeof sessionStorage !== "undefined" && sessionStorage.getItem(STORAGE_KEY) === "1";
-      setEntered(already);
-    } else {
-      setEntered(true);
+      const t = setTimeout(() => setShowSplash(false), 2000);
+      return () => clearTimeout(t);
     }
   }, []);
 
-  // Until hydrated, always render children so SSR/website is unchanged.
+  // Until hydrated, render children so SSR/website is unchanged.
   if (!mounted) return <>{children}</>;
-  if (!standalone || entered) return <>{children}</>;
+  // Browser/website users — pass straight through.
+  if (!standalone) return <>{children}</>;
+
+  // PWA mode — take over entirely. Website content is never rendered.
+  const bg =
+    "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)";
+
+  if (showSplash) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: bg,
+          color: "white",
+          padding: "2rem",
+          textAlign: "center",
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+        }}
+      >
+        <img
+          src="/sdaLogo.png"
+          alt="Chuo Kikuu SDA Church"
+          style={{
+            width: 128,
+            height: 128,
+            marginBottom: 24,
+            borderRadius: 24,
+            animation: "pwaPulse 1.6s ease-in-out infinite",
+          }}
+        />
+        <h1
+          style={{
+            fontSize: "1.6rem",
+            fontWeight: 700,
+            margin: 0,
+            letterSpacing: "0.01em",
+          }}
+        >
+          Chuo Kikuu SDA Church
+        </h1>
+        <p style={{ opacity: 0.7, marginTop: 8, fontSize: "0.9rem" }}>
+          Resource Mobilization
+        </p>
+        <style>{`
+          @keyframes pwaPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.06); opacity: 0.9; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -40,8 +97,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background:
-          "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)",
+        background: bg,
         color: "white",
         padding: "2rem",
         textAlign: "center",
@@ -50,24 +106,25 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     >
       <img
         src="/sdaLogo.png"
-        alt="Chuo Kikuu SDA"
-        style={{ width: 96, height: 96, marginBottom: 24, borderRadius: 16 }}
+        alt="Chuo Kikuu SDA Church"
+        style={{ width: 96, height: 96, marginBottom: 20, borderRadius: 16 }}
       />
-      <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: 8 }}>
+      <h1 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: 6 }}>
         Chuo Kikuu SDA Church
       </h1>
-      <p style={{ opacity: 0.75, marginBottom: 40, maxWidth: 320, lineHeight: 1.5 }}>
-        Welcome. Tap below to begin your contribution.
+      <p
+        style={{
+          opacity: 0.7,
+          marginBottom: 40,
+          maxWidth: 320,
+          lineHeight: 1.5,
+          fontSize: "0.95rem",
+        }}
+      >
+        Tap below to make your contribution.
       </p>
       <button
-        onClick={() => {
-          try {
-            sessionStorage.setItem(STORAGE_KEY, "1");
-          } catch {
-            /* ignore */
-          }
-          setEntered(true);
-        }}
+        onClick={() => setPayOpen(true)}
         style={{
           padding: "16px 32px",
           borderRadius: 16,
@@ -83,6 +140,12 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       >
         Press Here to Contribute
       </button>
+
+      <PaymentDialog
+        open={payOpen}
+        onClose={() => setPayOpen(false)}
+        isSimulated={false}
+      />
     </div>
   );
 }
