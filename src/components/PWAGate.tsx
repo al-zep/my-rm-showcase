@@ -1,39 +1,41 @@
 import { useEffect, useState } from "react";
 import { isStandalonePWA } from "@/lib/pwa";
-import PaymentDialog from "@/components/payments/PaymentDialog";
 
 /**
  * Gate shown ONLY when the app is launched as an installed PWA
- * (display-mode: standalone). Browser/website users bypass this entirely
- * and see the normal site.
+ * (display-mode: standalone). Browser/website users bypass this entirely.
  *
- * In PWA mode the website is NEVER rendered. The flow is:
- *   1. Splash screen (logo + "Chuo Kikuu SDA Church") for ~2s
- *   2. Contribute screen with a single "Press Here to Contribute" button
- *   3. Tapping the button opens the contribution dialog
+ * PWA flow:
+ *   1. Splash (logo + "Chuo Kikuu SDA Church") ~2s
+ *   2. Single "Press Here to Contribute" button
+ *   3. Tapping the button enters the full app (children) and auto-opens
+ *      the same category picker shown on the website button.
  */
 export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [payOpen, setPayOpen] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const isPwa = isStandalonePWA();
     setStandalone(isPwa);
     if (isPwa) {
+      if (sessionStorage.getItem("pwa_entered_v1") === "1") {
+        setEntered(true);
+        setShowSplash(false);
+        return;
+      }
       const t = setTimeout(() => setShowSplash(false), 2000);
       return () => clearTimeout(t);
     }
   }, []);
 
-  // Until hydrated, render children so SSR/website is unchanged.
   if (!mounted) return <>{children}</>;
-  // Browser/website users — pass straight through.
   if (!standalone) return <>{children}</>;
+  if (entered) return <>{children}</>;
 
-  // PWA mode — take over entirely. Website content is never rendered.
   const bg =
     "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)";
 
@@ -65,14 +67,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
             animation: "pwaPulse 1.6s ease-in-out infinite",
           }}
         />
-        <h1
-          style={{
-            fontSize: "1.6rem",
-            fontWeight: 700,
-            margin: 0,
-            letterSpacing: "0.01em",
-          }}
-        >
+        <h1 style={{ fontSize: "1.6rem", fontWeight: 700, margin: 0 }}>
           Chuo Kikuu SDA Church
         </h1>
         <p style={{ opacity: 0.7, marginTop: 8, fontSize: "0.9rem" }}>
@@ -87,6 +82,16 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+
+  const handleEnter = () => {
+    try {
+      sessionStorage.setItem("pwa_entered_v1", "1");
+      sessionStorage.setItem("pwa_open_picker", "1");
+    } catch {
+      /* ignore */
+    }
+    setEntered(true);
+  };
 
   return (
     <div
@@ -124,7 +129,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
         Tap below to make your contribution.
       </p>
       <button
-        onClick={() => setPayOpen(true)}
+        onClick={handleEnter}
         style={{
           padding: "16px 32px",
           borderRadius: 16,
@@ -140,12 +145,6 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       >
         Press Here to Contribute
       </button>
-
-      <PaymentDialog
-        open={payOpen}
-        onClose={() => setPayOpen(false)}
-        isSimulated={false}
-      />
     </div>
   );
 }

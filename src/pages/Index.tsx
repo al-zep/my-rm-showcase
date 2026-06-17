@@ -32,6 +32,15 @@ const Index = () => {
   const [selectedGuestCategory, setSelectedGuestCategory] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // PWA: auto-open contribute picker when entering from PWA gate
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("pwa_open_picker") === "1") {
+      sessionStorage.removeItem("pwa_open_picker");
+      setShowPicker(true);
+    }
+  }, []);
+
   // Hero slideshow state
   const [currentSlide, setCurrentSlide] = useState(0);
   const heroImages = [
