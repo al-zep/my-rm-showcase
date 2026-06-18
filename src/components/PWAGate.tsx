@@ -1,32 +1,31 @@
 import { useEffect, useState } from "react";
 import { isStandalonePWA } from "@/lib/pwa";
+import PaymentDialog from "@/components/payments/PaymentDialog";
 
 /**
  * Gate shown ONLY when the app is launched as an installed PWA
  * (display-mode: standalone). Browser/website users bypass this entirely.
  *
  * PWA flow:
- *   1. Splash (logo + "Chuo Kikuu SDA Church") ~2s
- *   2. Single "Press Here to Contribute" button
- *   3. Tapping the button enters the full app (children) and auto-opens
- *      the same category picker shown on the website button.
+ *   1. Splash (logo + "Chuo Kikuu SDA Church") ~2s — ALWAYS on launch
+ *   2. "Press Here to Contribute" screen (persistent home of the PWA)
+ *   3. Tapping the button opens the PaymentDialog directly.
+ *      Closing the dialog returns to the contribute screen — never the website.
+ *
+ * The website's landing page / children are never rendered inside the PWA.
  */
 export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [standalone, setStandalone] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [entered, setEntered] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const isPwa = isStandalonePWA();
     setStandalone(isPwa);
     if (isPwa) {
-      if (sessionStorage.getItem("pwa_entered_v1") === "1") {
-        setEntered(true);
-        setShowSplash(false);
-        return;
-      }
+      // Always show splash on every fresh launch of the PWA.
       const t = setTimeout(() => setShowSplash(false), 2000);
       return () => clearTimeout(t);
     }
@@ -34,7 +33,6 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
   if (!mounted) return <>{children}</>;
   if (!standalone) return <>{children}</>;
-  if (entered) return <>{children}</>;
 
   const bg =
     "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)";
@@ -83,16 +81,6 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const handleEnter = () => {
-    try {
-      sessionStorage.setItem("pwa_entered_v1", "1");
-      sessionStorage.setItem("pwa_open_picker", "1");
-    } catch {
-      /* ignore */
-    }
-    setEntered(true);
-  };
-
   return (
     <div
       style={{
@@ -129,7 +117,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
         Tap below to make your contribution.
       </p>
       <button
-        onClick={handleEnter}
+        onClick={() => setPayOpen(true)}
         style={{
           padding: "16px 32px",
           borderRadius: 16,
@@ -145,6 +133,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       >
         Press Here to Contribute
       </button>
+
+      <PaymentDialog
+        open={payOpen}
+        onClose={() => setPayOpen(false)}
+        userId={null}
+        isSimulated={false}
+      />
     </div>
   );
 }
