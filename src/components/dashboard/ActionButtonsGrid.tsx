@@ -75,7 +75,10 @@ const ActionButtonsGrid = ({
   onCloseDropdown,
   isAdmin = false,
 }: ActionButtonsGridProps) => {
-  const visibleActions = isAdmin ? [...actions, adminAction] : actions;
+  // Admin-only actions are now accessible via the Settings icon in the Header.
+  void isAdmin;
+  void adminAction;
+  const visibleActions = actions;
   const activeButton = visibleActions.find(a => a.id === activeAction);
 
   return (
