@@ -87,6 +87,12 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
   const handleCategoryClick = (category: typeof CATEGORIES[0]) => {
     setShowPicker(false);
+    if (!category.requiresAuth) {
+      // Visitors & Regulars go straight to payment form — no sign in/up
+      setPaymentTitle(`${category.label} Contribution`);
+      setShowPayment(true);
+      return;
+    }
     setIsSignup(category.requiresAuth);
     setAuthDropdown(category.requiresAuth ? "signup" : "signin");
   };
