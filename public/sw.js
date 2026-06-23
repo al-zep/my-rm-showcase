@@ -3,7 +3,7 @@
  * - CacheFirst for same-origin static assets (images, fonts).
  * - Versioned cache name so updates evict old caches.
  */
-const VERSION = "v1.0.0";
+const VERSION = "v1.1.0-network-logos";
 const STATIC_CACHE = `sda-static-${VERSION}`;
 const RUNTIME_CACHE = `sda-runtime-${VERSION}`;
 

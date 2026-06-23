@@ -9,6 +9,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MobileNetworkSelector, { MOBILE_NETWORKS } from "@/components/payments/MobileNetworkSelector";
 
 // Payment type
 type PaymentType = "mobile_money" | "bank_transfer";
@@ -28,13 +29,8 @@ interface PaymentSummary {
   amount: number;
 }
 
-// Mobile money options
-const mobileMoneyMethods = [
-  { id: "mpesa", name: "M-Pesa" },
-  { id: "tigopesa", name: "Tigo Pesa" },
-  { id: "airtel", name: "Airtel Money" },
-  { id: "halopesa", name: "HaloPesa" },
-];
+// Mobile money options (shared with reusable selector)
+const mobileMoneyMethods = MOBILE_NETWORKS;
 
 // Bank options
 const bankMethods = [
@@ -390,29 +386,12 @@ const PaymentForm = ({
             <label className="text-sm font-semibold text-white">Mobile Money Provider</label>
             <div className="grid grid-cols-2 gap-3">
               {mobileMoneyMethods.map((method) => (
-                <motion.button
+                <MobileNetworkSelector
                   key={method.id}
-                  type="button"
-                  onClick={() => handleMobileMethodSelect(method.id)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={cn(
-                    "relative p-3 rounded-xl border-2 transition-all duration-200 text-left",
-                    selectedMobileMethod === method.id
-                      ? "border-gold bg-gold/10 shadow-lg shadow-gold/20"
-                      : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                  )}
-                >
-                  <span className="font-medium text-white text-sm">{method.name}</span>
-                  {selectedMobileMethod === method.id && (
-                    <motion.div
-                      layoutId="selectedMobileMethod"
-                      className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gold flex items-center justify-center"
-                    >
-                      <CheckCircle2 className="w-3 h-3 text-primary" />
-                    </motion.div>
-                  )}
-                </motion.button>
+                  network={method}
+                  selected={selectedMobileMethod === method.id}
+                  onSelect={() => handleMobileMethodSelect(method.id)}
+                />
               ))}
             </div>
             {errors.method && (
