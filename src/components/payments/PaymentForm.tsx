@@ -469,7 +469,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 onChange={handlePhoneChange}
                 placeholder="2557XXXXXXXX"
                 disabled={paymentState !== "form"}
-                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
                 maxLength={16}
                 inputMode="numeric"
               />
@@ -481,7 +481,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 disabled={paymentState !== "form"}
-                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
               >
                 <option value="">-- Select reference --</option>
                 {REFERENCE_OPTIONS.map((o) => (
@@ -496,7 +496,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                   placeholder="Describe your reference"
                   disabled={paymentState !== "form"}
                   maxLength={100}
-                  className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                  className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
                 />
               )}
             </div>
@@ -542,7 +542,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 placeholder="Full name"
                 disabled={paymentState !== "form"}
                 maxLength={80}
-                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
               />
             </div>
 
@@ -552,7 +552,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 disabled={paymentState !== "form"}
-                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                className="w-full h-10 sm:h-11 mt-1 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
               >
                 <option value="">-- Select reference --</option>
                 {REFERENCE_OPTIONS.map((o) => (
@@ -567,7 +567,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
                   placeholder="Describe your reference"
                   disabled={paymentState !== "form"}
                   maxLength={100}
-                  className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+                  className="w-full h-10 sm:h-11 mt-2 px-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
                 />
               )}
             </div>
@@ -586,7 +586,7 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
             onChange={handleAmountChange}
             placeholder="500"
             disabled={paymentState !== "form"}
-            className="w-full h-10 sm:h-11 pl-12 pr-3 rounded-xl border-2 bg-white/95 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
+            className="w-full h-10 sm:h-11 pl-12 pr-3 rounded-xl border-2 bg-white/95 text-slate-900 placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white/20 border-border/50 focus:border-gold disabled:opacity-60"
             inputMode="numeric"
           />
         </div>

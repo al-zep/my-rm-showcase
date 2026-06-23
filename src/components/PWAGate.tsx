@@ -349,8 +349,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
                 {authStep === "phone" ? (
                   <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                    {isSignup && <Input placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-14 text-lg text-center rounded-2xl bg-white/90 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />}
-                    <Input type="tel" placeholder={isSignup ? "0712345678 or 255712345678" : "0712345678"} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} className="h-14 text-lg text-center rounded-2xl bg-white/90 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />
+                    {isSignup && <Input placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />}
+                    <Input type="tel" placeholder={isSignup ? "0712345678 or 255712345678" : "0712345678"} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />
                     <motion.button type="submit" disabled={authLoading} className="w-full h-14 rounded-2xl bg-gradient-to-r from-gold to-amber-500 text-white font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       {authLoading ? (isSignup ? "Sending OTP..." : "Signing In...") : isSignup ? "Send OTP" : "Sign In"}
                     </motion.button>
@@ -360,7 +360,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                     <div className="flex justify-center mb-4">
                       <InputOTP value={otp} onChange={setOtp} maxLength={6} className="gap-2">
                         <InputOTPGroup>
-                          {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} className="h-14 w-12 bg-white/90 backdrop-blur-sm rounded-xl border-2 border-white/30 text-lg font-mono tracking-widest" />)}
+                          {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} className="h-14 w-12 bg-white/90 text-slate-900 backdrop-blur-sm rounded-xl border-2 border-white/30 text-lg font-mono tracking-widest" />)}
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
