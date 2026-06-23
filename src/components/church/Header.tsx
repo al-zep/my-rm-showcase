@@ -1,19 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Trophy, LogOut, Shield, DollarSign, Users } from "lucide-react";
+import { Settings } from "lucide-react";
+import { useState } from "react";
 import { getSession } from "@/lib/auth";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useAdmin";
+import AdminPanel from "@/components/admin/AdminPanel";
 
 const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const session = getSession();
-  const { logout } = useAuth();
-  const isSimulated = false; // or from session if needed
-
-  // navigation items are intentionally empty now; only sign out button remains
-  const navItems: { to: string; label: string; icon: React.FC<any> }[] = [];
+  const { data: isAdmin = false } = useIsAdmin(session?.user_id);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   return (
     <motion.header
@@ -27,31 +24,21 @@ const Header = () => {
           <span className="font-display text-lg text-church-blue">Chuo Kikuu SDA Church</span>
         </Link>
 
-        <nav className="flex items-center gap-1">
-          {navItems.map((item) => {
-            const active = location.pathname === item.to;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  active ? "text-church-blue bg-church-blue/5" : "text-slate-600 hover:text-church-blue hover:bg-slate-50"
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.label}</span>
-                {active && (
-                  <motion.div
-                    className="absolute inset-0 rounded-lg bg-church-blue/10"
-                    layoutId="activeNav"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  />
-                )}
-              </Link>
-            );
-          })}
+        <nav className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={() => setAdminOpen(true)}
+              aria-label="Admin settings"
+              title="Admin Panel"
+              className="relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-church-blue bg-amber-100 hover:bg-amber-200 transition-colors border border-amber-300"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Admin</span>
+            </button>
+          )}
         </nav>
       </div>
+      {isAdmin && <AdminPanel open={adminOpen} onClose={() => setAdminOpen(false)} />}
     </motion.header>
   );
 };
