@@ -5,6 +5,7 @@ import { isPWAEntryExperience } from "@/lib/pwa";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
+import PaymentDialog from "@/components/payments/PaymentDialog";
 
 const CATEGORIES = [
   { id: "church_member", label: "Church Member", icon: Church, description: "Registered church member", requiresAuth: true },
@@ -31,6 +32,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [showSplash, setShowSplash] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
   const [authDropdown, setAuthDropdown] = useState<"signin" | "signup" | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentTitle, setPaymentTitle] = useState("Make a Contribution");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSignup, setIsSignup] = useState(true);
@@ -84,6 +87,12 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
   const handleCategoryClick = (category: typeof CATEGORIES[0]) => {
     setShowPicker(false);
+    if (!category.requiresAuth) {
+      // Visitors & Regulars go straight to payment form — no sign in/up
+      setPaymentTitle(`${category.label} Contribution`);
+      setShowPayment(true);
+      return;
+    }
     setIsSignup(category.requiresAuth);
     setAuthDropdown(category.requiresAuth ? "signup" : "signin");
   };
@@ -371,6 +380,15 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PaymentDialog
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        userId={null}
+        isSimulated={false}
+        title={paymentTitle}
+        subtitle="Chuo Kikuu SDA Church"
+      />
     </div>
   );
 }
