@@ -32,6 +32,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [showSplash, setShowSplash] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
   const [authDropdown, setAuthDropdown] = useState<"signin" | "signup" | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentTitle, setPaymentTitle] = useState("Make a Contribution");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSignup, setIsSignup] = useState(true);
