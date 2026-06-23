@@ -9,6 +9,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MobileNetworkSelector, { MOBILE_NETWORKS } from "@/components/payments/MobileNetworkSelector";
 
 // Payment type
 type PaymentType = "mobile_money" | "bank_transfer";
@@ -28,13 +29,8 @@ interface PaymentSummary {
   amount: number;
 }
 
-// Mobile money options
-const mobileMoneyMethods = [
-  { id: "mpesa", name: "M-Pesa" },
-  { id: "tigopesa", name: "Tigo Pesa" },
-  { id: "airtel", name: "Airtel Money" },
-  { id: "halopesa", name: "HaloPesa" },
-];
+// Mobile money options (shared with reusable selector)
+const mobileMoneyMethods = MOBILE_NETWORKS;
 
 // Bank options
 const bankMethods = [
