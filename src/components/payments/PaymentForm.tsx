@@ -6,16 +6,12 @@ import { getSession } from "@/lib/auth";
 
 import { cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
+import MobileNetworkSelector, { MOBILE_NETWORKS } from "./MobileNetworkSelector";
 
 type PaymentType = "mobile_money" | "bank";
 type PaymentState = "form" | "sending" | "pending" | "awaiting_bank" | "success" | "error";
 
-const mobileMoneyMethods = [
-  { id: "mpesa", name: "M-Pesa" },
-  { id: "tigopesa", name: "Tigo Pesa" },
-  { id: "airtel", name: "Airtel Money" },
-  { id: "halopesa", name: "HaloPesa" },
-];
+const mobileMoneyMethods = MOBILE_NETWORKS;
 
 const formatPhoneNumber = (value: string): string => {
   const digits = value.replace(/\D/g, "").slice(0, 12);
