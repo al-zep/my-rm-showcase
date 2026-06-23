@@ -360,7 +360,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                     <div className="flex justify-center mb-4">
                       <InputOTP value={otp} onChange={setOtp} maxLength={6} className="gap-2">
                         <InputOTPGroup>
-                          {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} className="h-14 w-12 bg-white/90 backdrop-blur-sm rounded-xl border-2 border-white/30 text-lg font-mono tracking-widest" />)}
+                          {[0, 1, 2, 3, 4, 5].map((i) => <InputOTPSlot key={i} index={i} className="h-14 w-12 bg-white/90 text-slate-900 backdrop-blur-sm rounded-xl border-2 border-white/30 text-lg font-mono tracking-widest" />)}
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
