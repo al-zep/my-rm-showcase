@@ -505,25 +505,13 @@ const PaymentForm = ({ userId = null, isSimulated = false }: PaymentFormProps) =
               <label className="text-xs sm:text-sm font-semibold text-white">Provider</label>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 {mobileMoneyMethods.map((m) => (
-                  <button
+                  <MobileNetworkSelector
                     key={m.id}
-                    type="button"
-                    onClick={() => setSelectedMobileMethod(m.id)}
+                    network={m}
+                    selected={selectedMobileMethod === m.id}
                     disabled={paymentState !== "form"}
-                    className={cn(
-                      "relative p-2 rounded-lg border-2 transition-all text-center",
-                      selectedMobileMethod === m.id
-                        ? "border-gold bg-gold/10"
-                        : "border-white/20 bg-white/5 hover:border-white/40"
-                    )}
-                  >
-                    <span className="font-medium text-white text-xs">{m.name}</span>
-                    {selectedMobileMethod === m.id && (
-                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gold flex items-center justify-center">
-                        <CheckCircle2 className="w-2.5 h-2.5 text-primary" />
-                      </div>
-                    )}
-                  </button>
+                    onSelect={() => setSelectedMobileMethod(m.id)}
+                  />
                 ))}
               </div>
             </div>
