@@ -380,6 +380,15 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PaymentDialog
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        userId={null}
+        isSimulated={false}
+        title={paymentTitle}
+        subtitle="Chuo Kikuu SDA Church"
+      />
     </div>
   );
 }
