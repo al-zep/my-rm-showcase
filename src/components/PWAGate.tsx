@@ -94,8 +94,12 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       setShowPayment(true);
       return;
     }
-    setIsSignup(category.requiresAuth);
-    setAuthDropdown(category.requiresAuth ? "signup" : "signin");
+    // Map PWA category id -> canonical profile role
+    // church_member -> member, student -> student
+    const mappedRole = category.id === "church_member" ? "member" : category.id;
+    setSelectedRole(mappedRole);
+    setIsSignup(true);
+    setAuthDropdown("signup");
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
