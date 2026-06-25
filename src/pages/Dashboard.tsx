@@ -12,6 +12,7 @@ import { createSupabaseClient } from "../lib/supabase/client.ts";
 // LEVELS removed - using Lucide icons directly
 import Header from "@/components/church/Header";
 import { cn } from "@/lib/utils";
+import SplashScreen from "@/components/SplashScreen";
 
 // Dashboard Components
 import OverviewCard from "@/components/dashboard/OverviewCard";
