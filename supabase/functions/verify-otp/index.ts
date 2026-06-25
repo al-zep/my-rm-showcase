@@ -34,7 +34,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, otp, full_name } = await req.json();
+    const { phone, otp, full_name, role } = await req.json();
+
+    // Whitelist roles that can be set from client during signup
+    const ALLOWED_SIGNUP_ROLES = new Set(["member", "student", "church_member"]);
+    // Normalize: PWA passes the category id; map to canonical profile role
+    const normalizeRole = (r: unknown): string | null => {
+      if (typeof r !== "string") return null;
+      const v = r.trim().toLowerCase();
+      if (v === "church_member") return "member";
+      if (ALLOWED_SIGNUP_ROLES.has(v)) return v;
+      return null;
+    };
+    const requestedRole = normalizeRole(role);
 
     if (!phone || !otp) {
       return new Response(
@@ -116,7 +128,7 @@ Deno.serve(async (req) => {
           user_id: user.id,
           phone: normalizedPhone,
           full_name: full_name || "",
-          role: "member",
+          role: requestedRole || "member",
           access_token: accessToken,
           token_expires_at: expiresAt,
         })

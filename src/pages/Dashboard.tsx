@@ -12,6 +12,7 @@ import { createSupabaseClient } from "../lib/supabase/client.ts";
 // LEVELS removed - using Lucide icons directly
 import Header from "@/components/church/Header";
 import { cn } from "@/lib/utils";
+import SplashScreen from "@/components/SplashScreen";
 
 // Dashboard Components
 import OverviewCard from "@/components/dashboard/OverviewCard";
@@ -200,6 +201,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   if (!session) {
     navigate("/");
@@ -220,15 +222,12 @@ const Dashboard = () => {
   const safePublicData = publicData || { total_collected: 0, active_members: 0, best_group: null, groups_leaderboard: [], current_project: null };
 
 
+  if (signingOut) {
+    return <SplashScreen label="Signing out..." />;
+  }
+
   if (profileQuery.isLoading || contributionsQuery.isLoading || pledgesQuery.isLoading || publicLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <SplashScreen label="Loading your dashboard..." />;
   }
 
   if (profileQuery.error || contributionsQuery.error || pledgesQuery.error || publicError) {
@@ -383,6 +382,9 @@ Member • Chuo Kikuu SDA Church
               </button>
               <button
                 onClick={async () => {
+                  setSigningOut(true);
+                  // Brief delay so the startup splash shows during sign-out
+                  await new Promise((r) => setTimeout(r, 700));
                   clearSession();
                   if (isPWAEntryExperience()) {
                     window.location.assign(isStandalonePWA() ? "/" : "/?pwa=1");

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
 import PaymentDialog from "@/components/payments/PaymentDialog";
+import SplashScreen from "@/components/SplashScreen";
 
 const CATEGORIES = [
   { id: "church_member", label: "Church Member", icon: Church, description: "Registered church member", requiresAuth: true },
@@ -42,6 +43,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [navLoading, setNavLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -93,8 +96,12 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       setShowPayment(true);
       return;
     }
-    setIsSignup(category.requiresAuth);
-    setAuthDropdown(category.requiresAuth ? "signup" : "signin");
+    // Map PWA category id -> canonical profile role
+    // church_member -> member, student -> student
+    const mappedRole = category.id === "church_member" ? "member" : category.id;
+    setSelectedRole(mappedRole);
+    setIsSignup(true);
+    setAuthDropdown("signup");
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -111,12 +118,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     setAuthLoading(true);
     try {
       if (isSignup) {
-        await sendOtp(phone, fullName.trim());
+        await sendOtp(phone, fullName.trim(), selectedRole || undefined);
         setAuthStep("otp");
         setOtpCountdown(300);
         startCountdown();
       } else {
         await signIn(phone);
+        setNavLoading(true);
         window.location.assign("/dashboard");
       }
     } catch (err: any) {
@@ -135,7 +143,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     }
     setAuthLoading(true);
     try {
-      await verifyOtp(phone, otp, fullName);
+      await verifyOtp(phone, otp, fullName, selectedRole || undefined);
+      setNavLoading(true);
       window.location.assign("/dashboard");
     } catch (err: any) {
       setAuthError(err?.message || "Invalid OTP");
@@ -158,6 +167,10 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
   const bg =
     "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)";
+
+  if (navLoading) {
+    return <SplashScreen label="Loading your dashboard..." />;
+  }
 
   if (showSplash) {
     return (
