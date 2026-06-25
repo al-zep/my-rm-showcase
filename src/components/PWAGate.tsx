@@ -168,6 +168,10 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const bg =
     "radial-gradient(ellipse at top, #1a2238 0%, #0b0f1a 60%, #05070d 100%)";
 
+  if (navLoading) {
+    return <SplashScreen label="Loading your dashboard..." />;
+  }
+
   if (showSplash) {
     return (
       <div
