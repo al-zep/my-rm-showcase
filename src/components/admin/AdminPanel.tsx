@@ -395,6 +395,7 @@ const AdminPanel = ({ open, onClose }: Props) => {
               )}
             </div>
           </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
