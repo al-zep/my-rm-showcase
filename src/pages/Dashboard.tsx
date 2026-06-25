@@ -382,6 +382,9 @@ Member • Chuo Kikuu SDA Church
               </button>
               <button
                 onClick={async () => {
+                  setSigningOut(true);
+                  // Brief delay so the startup splash shows during sign-out
+                  await new Promise((r) => setTimeout(r, 700));
                   clearSession();
                   if (isPWAEntryExperience()) {
                     window.location.assign(isStandalonePWA() ? "/" : "/?pwa=1");
