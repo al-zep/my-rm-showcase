@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Settings, Users, BarChart3, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { X, Settings, Users, BarChart3, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase/database";
 import ChurchSettingsForm from "@/components/dashboard/ChurchSettingsForm";
@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 
 type Tab = "settings" | "users" | "analytics";
 type Range = "week" | "month" | "quarter";
+type Category = "Members" | "Students" | "Regulars" | "Visitors";
 
 interface UserRow {
   full_name: string;
@@ -22,14 +23,31 @@ interface UserRow {
   contribution: number;
 }
 
+interface AdminExportData {
+  sections: Record<Category, UserRow[]>;
+  guestTotal: number;
+  guestCount: number;
+}
+
+const CATEGORY_ORDER: Category[] = ["Members", "Students", "Regulars", "Visitors"];
+
+const roleToCategory = (role: string | null | undefined): Category => {
+  const r = (role || "").toLowerCase();
+  if (r === "student") return "Students";
+  if (r === "regular") return "Regulars";
+  if (r === "visitor") return "Visitors";
+  // member, church_member, admin, super_admin, user, etc.
+  return "Members";
+};
+
 const useAdminUserData = () => {
   return useQuery({
     queryKey: ["admin-user-export"],
-    queryFn: async (): Promise<UserRow[]> => {
+    queryFn: async (): Promise<AdminExportData> => {
       const client = getSupabaseClient();
       const year = new Date().getFullYear();
       const [profilesRes, pledgesRes, contribsRes] = await Promise.all([
-        client.from("profiles").select("id, full_name, phone"),
+        client.from("profiles").select("id, full_name, phone, role"),
         client.from("pledges").select("user_id, pledge_amount, year").eq("year", year),
         client.from("contributions").select("user_id, amount, status").eq("status", "completed"),
       ]);
@@ -41,15 +59,28 @@ const useAdminUserData = () => {
         pledgeMap.set(p.user_id, Number(p.pledge_amount || 0));
       });
       const contribMap = new Map<string, number>();
+      let guestTotal = 0;
+      let guestCount = 0;
       contribs.forEach((c: any) => {
-        contribMap.set(c.user_id, (contribMap.get(c.user_id) || 0) + Number(c.amount || 0));
+        if (!c.user_id) {
+          guestTotal += Number(c.amount || 0);
+          guestCount += 1;
+        } else {
+          contribMap.set(c.user_id, (contribMap.get(c.user_id) || 0) + Number(c.amount || 0));
+        }
       });
-      return profiles.map((p: any) => ({
-        full_name: p.full_name || "—",
-        phone: p.phone || "—",
-        pledge: pledgeMap.get(p.id) || 0,
-        contribution: contribMap.get(p.id) || 0,
-      }));
+      const sections: Record<Category, UserRow[]> = {
+        Members: [], Students: [], Regulars: [], Visitors: [],
+      };
+      profiles.forEach((p: any) => {
+        sections[roleToCategory(p.role)].push({
+          full_name: p.full_name || "—",
+          phone: p.phone || "—",
+          pledge: pledgeMap.get(p.id) || 0,
+          contribution: contribMap.get(p.id) || 0,
+        });
+      });
+      return { sections, guestTotal, guestCount };
     },
     staleTime: 30_000,
   });
