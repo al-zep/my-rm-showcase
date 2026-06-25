@@ -42,6 +42,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
