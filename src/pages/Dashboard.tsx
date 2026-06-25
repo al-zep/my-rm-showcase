@@ -201,6 +201,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   if (!session) {
     navigate("/");
