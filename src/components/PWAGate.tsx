@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
 import PaymentDialog from "@/components/payments/PaymentDialog";
+import SplashScreen from "@/components/SplashScreen";
 
 const CATEGORIES = [
   { id: "church_member", label: "Church Member", icon: Church, description: "Registered church member", requiresAuth: true },
