@@ -43,6 +43,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [otp, setOtp] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [navLoading, setNavLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
