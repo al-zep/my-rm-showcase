@@ -376,76 +376,64 @@ const AdminPanel = ({ open, onClose }: Props) => {
 
               {tab === "users" && (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-white">
-                      <p className="font-semibold">All Members</p>
-                      <p className="text-xs text-white/60">
-                        Auto-updates with new pledges & contributions
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => usersQuery.data && exportPDF(usersQuery.data)}
-                        disabled={!usersQuery.data?.length}
-                        className="bg-rose-500/20 hover:bg-rose-500/30 text-white border border-rose-400/40"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        PDF
-                      </Button>
-                      <Button
-                        onClick={() => usersQuery.data && exportExcel(usersQuery.data)}
-                        disabled={!usersQuery.data?.length}
-                        className="bg-emerald-500/20 hover:bg-emerald-500/30 text-white border border-emerald-400/40"
-                      >
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                        Excel
-                      </Button>
-                    </div>
+                  <div className="text-white">
+                    <p className="font-semibold">Export Contributors Report</p>
+                    <p className="text-xs text-white/60">
+                      Documents are grouped into Members, Students, Regulars & Visitors with name, phone, pledge and contribution.
+                    </p>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 overflow-hidden">
-                    {usersQuery.isLoading ? (
-                      <div className="p-8 flex justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
+                  {usersQuery.isLoading ? (
+                    <div className="p-8 flex justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {CATEGORY_ORDER.map((cat) => {
+                          const count = usersQuery.data?.sections[cat].length ?? 0;
+                          return (
+                            <div key={cat} className="rounded-xl border border-white/10 bg-white/5 p-3 text-white">
+                              <p className="text-xs text-white/60">{cat}</p>
+                              <p className="text-xl font-bold">{count}</p>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : (
-                      <div className="max-h-[50vh] overflow-y-auto">
-                        <table className="w-full text-sm text-white">
-                          <thead className="bg-white/10 sticky top-0">
-                            <tr>
-                              <th className="text-left p-2">Name</th>
-                              <th className="text-left p-2">Phone</th>
-                              <th className="text-right p-2">Pledge</th>
-                              <th className="text-right p-2">Contribution</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(usersQuery.data ?? []).map((r, i) => (
-                              <tr key={i} className="border-t border-white/5">
-                                <td className="p-2">{r.full_name}</td>
-                                <td className="p-2">{r.phone}</td>
-                                <td className="p-2 text-right">
-                                  {r.pledge.toLocaleString()}
-                                </td>
-                                <td className="p-2 text-right">
-                                  {r.contribution.toLocaleString()}
-                                </td>
-                              </tr>
-                            ))}
-                            {!usersQuery.data?.length && (
-                              <tr>
-                                <td colSpan={4} className="p-6 text-center text-white/60">
-                                  No members yet
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
+
+                      {(usersQuery.data?.guestCount ?? 0) > 0 && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-white text-sm">
+                          <span className="text-white/60">Guest contributions (anonymous): </span>
+                          <span className="font-semibold">
+                            {usersQuery.data?.guestCount} · TZS{" "}
+                            {usersQuery.data?.guestTotal.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => usersQuery.data && exportPDF(usersQuery.data)}
+                          disabled={!usersQuery.data}
+                          className="flex-1 bg-rose-500/20 hover:bg-rose-500/30 text-white border border-rose-400/40"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Download PDF
+                        </Button>
+                        <Button
+                          onClick={() => usersQuery.data && exportExcel(usersQuery.data)}
+                          disabled={!usersQuery.data}
+                          className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-white border border-emerald-400/40"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 mr-2" />
+                          Download Excel
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
+
 
               {tab === "analytics" && (
                 <div className="space-y-4">
