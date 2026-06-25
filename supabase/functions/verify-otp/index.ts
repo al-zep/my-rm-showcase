@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
           user_id: user.id,
           phone: normalizedPhone,
           full_name: full_name || "",
-          role: "member",
+          role: requestedRole || "member",
           access_token: accessToken,
           token_expires_at: expiresAt,
         })
