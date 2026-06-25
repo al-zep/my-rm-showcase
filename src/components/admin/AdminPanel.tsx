@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Settings, Users, BarChart3, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { X, Settings, Users, BarChart3, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getSupabaseClient } from "@/lib/supabase/database";
 import ChurchSettingsForm from "@/components/dashboard/ChurchSettingsForm";
@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 
 type Tab = "settings" | "users" | "analytics";
 type Range = "week" | "month" | "quarter";
+type Category = "Members" | "Students" | "Regulars" | "Visitors";
 
 interface UserRow {
   full_name: string;
@@ -22,14 +23,31 @@ interface UserRow {
   contribution: number;
 }
 
+interface AdminExportData {
+  sections: Record<Category, UserRow[]>;
+  guestTotal: number;
+  guestCount: number;
+}
+
+const CATEGORY_ORDER: Category[] = ["Members", "Students", "Regulars", "Visitors"];
+
+const roleToCategory = (role: string | null | undefined): Category => {
+  const r = (role || "").toLowerCase();
+  if (r === "student") return "Students";
+  if (r === "regular") return "Regulars";
+  if (r === "visitor") return "Visitors";
+  // member, church_member, admin, super_admin, user, etc.
+  return "Members";
+};
+
 const useAdminUserData = () => {
   return useQuery({
     queryKey: ["admin-user-export"],
-    queryFn: async (): Promise<UserRow[]> => {
+    queryFn: async (): Promise<AdminExportData> => {
       const client = getSupabaseClient();
       const year = new Date().getFullYear();
       const [profilesRes, pledgesRes, contribsRes] = await Promise.all([
-        client.from("profiles").select("id, full_name, phone"),
+        client.from("profiles").select("id, full_name, phone, role"),
         client.from("pledges").select("user_id, pledge_amount, year").eq("year", year),
         client.from("contributions").select("user_id, amount, status").eq("status", "completed"),
       ]);
@@ -41,15 +59,28 @@ const useAdminUserData = () => {
         pledgeMap.set(p.user_id, Number(p.pledge_amount || 0));
       });
       const contribMap = new Map<string, number>();
+      let guestTotal = 0;
+      let guestCount = 0;
       contribs.forEach((c: any) => {
-        contribMap.set(c.user_id, (contribMap.get(c.user_id) || 0) + Number(c.amount || 0));
+        if (!c.user_id) {
+          guestTotal += Number(c.amount || 0);
+          guestCount += 1;
+        } else {
+          contribMap.set(c.user_id, (contribMap.get(c.user_id) || 0) + Number(c.amount || 0));
+        }
       });
-      return profiles.map((p: any) => ({
-        full_name: p.full_name || "—",
-        phone: p.phone || "—",
-        pledge: pledgeMap.get(p.id) || 0,
-        contribution: contribMap.get(p.id) || 0,
-      }));
+      const sections: Record<Category, UserRow[]> = {
+        Members: [], Students: [], Regulars: [], Visitors: [],
+      };
+      profiles.forEach((p: any) => {
+        sections[roleToCategory(p.role)].push({
+          full_name: p.full_name || "—",
+          phone: p.phone || "—",
+          pledge: pledgeMap.get(p.id) || 0,
+          contribution: contribMap.get(p.id) || 0,
+        });
+      });
+      return { sections, guestTotal, guestCount };
     },
     staleTime: 30_000,
   });
@@ -134,49 +165,133 @@ const aggregate = (
   return order.map((k) => ({ label: k, amount: buckets.get(k) || 0 }));
 };
 
-const exportPDF = (rows: UserRow[]) => {
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Chuo Kikuu SDA Church — Members Report", 14, 18);
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
-  autoTable(doc, {
-    startY: 30,
-    head: [["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"]],
-    body: rows.map((r) => [
-      r.full_name,
-      r.phone,
-      r.pledge.toLocaleString(),
-      r.contribution.toLocaleString(),
-    ]),
-    foot: [[
-      "Total",
-      "",
-      rows.reduce((s, r) => s + r.pledge, 0).toLocaleString(),
-      rows.reduce((s, r) => s + r.contribution, 0).toLocaleString(),
-    ]],
-    headStyles: { fillColor: [30, 58, 95] },
-    footStyles: { fillColor: [212, 160, 23], textColor: 20, fontStyle: "bold" },
+const buildSummary = (data: AdminExportData) => {
+  return CATEGORY_ORDER.map((cat) => {
+    const rows = data.sections[cat];
+    const pledge = rows.reduce((s, r) => s + r.pledge, 0);
+    const contribution = rows.reduce((s, r) => s + r.contribution, 0);
+    return { cat, count: rows.length, pledge, contribution };
   });
-  doc.save(`members-report-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
-const exportExcel = (rows: UserRow[]) => {
-  const wsData = [
-    ["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"],
-    ...rows.map((r) => [r.full_name, r.phone, r.pledge, r.contribution]),
+const exportPDF = (data: AdminExportData) => {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Chuo Kikuu SDA Church — Contributors Report", 14, 18);
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
+
+  let cursorY = 32;
+
+  CATEGORY_ORDER.forEach((cat) => {
+    const rows = data.sections[cat];
+    doc.setFontSize(12);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`${cat} (${rows.length})`, 14, cursorY);
+    cursorY += 4;
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"]],
+      body: rows.length
+        ? rows.map((r) => [
+            r.full_name,
+            r.phone,
+            r.pledge.toLocaleString(),
+            r.contribution.toLocaleString(),
+          ])
+        : [["—", "—", "—", "—"]],
+      foot: [[
+        "Subtotal",
+        "",
+        rows.reduce((s, r) => s + r.pledge, 0).toLocaleString(),
+        rows.reduce((s, r) => s + r.contribution, 0).toLocaleString(),
+      ]],
+      headStyles: { fillColor: [30, 58, 95] },
+      footStyles: { fillColor: [212, 160, 23], textColor: 20, fontStyle: "bold" },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+    cursorY = (doc as any).lastAutoTable.finalY + 8;
+    if (cursorY > 260) {
+      doc.addPage();
+      cursorY = 20;
+    }
+  });
+
+  // Guest anonymous contributions (visitors/regulars who didn't sign up)
+  if (data.guestCount > 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`Guest Contributions — Anonymous (${data.guestCount})`, 14, cursorY);
+    cursorY += 4;
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Description", "Count", "Total (TZS)"]],
+      body: [["Visitors & Regulars (unregistered)", String(data.guestCount), data.guestTotal.toLocaleString()]],
+      headStyles: { fillColor: [30, 58, 95] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+    cursorY = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  // Grand total
+  const allRows = CATEGORY_ORDER.flatMap((c) => data.sections[c]);
+  const grandPledge = allRows.reduce((s, r) => s + r.pledge, 0);
+  const grandContrib = allRows.reduce((s, r) => s + r.contribution, 0) + data.guestTotal;
+  if (cursorY > 260) { doc.addPage(); cursorY = 20; }
+  autoTable(doc, {
+    startY: cursorY,
+    head: [["Grand Total", "Pledge (TZS)", "Contribution (TZS)"]],
+    body: [["All categories", grandPledge.toLocaleString(), grandContrib.toLocaleString()]],
+    headStyles: { fillColor: [212, 160, 23], textColor: 20 },
+    styles: { fontSize: 10, fontStyle: "bold" },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.save(`contributors-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
+const exportExcel = (data: AdminExportData) => {
+  const wb = XLSX.utils.book_new();
+
+  // Summary sheet
+  const summary = buildSummary(data);
+  const summaryAoa: (string | number)[][] = [
+    ["Category", "People", "Pledge (TZS)", "Contribution (TZS)"],
+    ...summary.map((s) => [s.cat, s.count, s.pledge, s.contribution]),
+    ["Guest (Anonymous)", data.guestCount, 0, data.guestTotal],
     [
-      "Total",
-      "",
-      rows.reduce((s, r) => s + r.pledge, 0),
-      rows.reduce((s, r) => s + r.contribution, 0),
+      "Grand Total",
+      summary.reduce((s, x) => s + x.count, 0) + data.guestCount,
+      summary.reduce((s, x) => s + x.pledge, 0),
+      summary.reduce((s, x) => s + x.contribution, 0) + data.guestTotal,
     ],
   ];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 20 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Members");
-  XLSX.writeFile(wb, `members-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryAoa);
+  summaryWs["!cols"] = [{ wch: 22 }, { wch: 10 }, { wch: 18 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+  // One sheet per category
+  CATEGORY_ORDER.forEach((cat) => {
+    const rows = data.sections[cat];
+    const aoa: (string | number)[][] = [
+      ["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"],
+      ...rows.map((r) => [r.full_name, r.phone, r.pledge, r.contribution]),
+      [
+        "Subtotal",
+        "",
+        rows.reduce((s, r) => s + r.pledge, 0),
+        rows.reduce((s, r) => s + r.contribution, 0),
+      ],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, cat);
+  });
+
+  XLSX.writeFile(wb, `contributors-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
 interface Props {
@@ -261,76 +376,64 @@ const AdminPanel = ({ open, onClose }: Props) => {
 
               {tab === "users" && (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="text-white">
-                      <p className="font-semibold">All Members</p>
-                      <p className="text-xs text-white/60">
-                        Auto-updates with new pledges & contributions
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => usersQuery.data && exportPDF(usersQuery.data)}
-                        disabled={!usersQuery.data?.length}
-                        className="bg-rose-500/20 hover:bg-rose-500/30 text-white border border-rose-400/40"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        PDF
-                      </Button>
-                      <Button
-                        onClick={() => usersQuery.data && exportExcel(usersQuery.data)}
-                        disabled={!usersQuery.data?.length}
-                        className="bg-emerald-500/20 hover:bg-emerald-500/30 text-white border border-emerald-400/40"
-                      >
-                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                        Excel
-                      </Button>
-                    </div>
+                  <div className="text-white">
+                    <p className="font-semibold">Export Contributors Report</p>
+                    <p className="text-xs text-white/60">
+                      Documents are grouped into Members, Students, Regulars & Visitors with name, phone, pledge and contribution.
+                    </p>
                   </div>
 
-                  <div className="rounded-xl border border-white/10 overflow-hidden">
-                    {usersQuery.isLoading ? (
-                      <div className="p-8 flex justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
+                  {usersQuery.isLoading ? (
+                    <div className="p-8 flex justify-center">
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {CATEGORY_ORDER.map((cat) => {
+                          const count = usersQuery.data?.sections[cat].length ?? 0;
+                          return (
+                            <div key={cat} className="rounded-xl border border-white/10 bg-white/5 p-3 text-white">
+                              <p className="text-xs text-white/60">{cat}</p>
+                              <p className="text-xl font-bold">{count}</p>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : (
-                      <div className="max-h-[50vh] overflow-y-auto">
-                        <table className="w-full text-sm text-white">
-                          <thead className="bg-white/10 sticky top-0">
-                            <tr>
-                              <th className="text-left p-2">Name</th>
-                              <th className="text-left p-2">Phone</th>
-                              <th className="text-right p-2">Pledge</th>
-                              <th className="text-right p-2">Contribution</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(usersQuery.data ?? []).map((r, i) => (
-                              <tr key={i} className="border-t border-white/5">
-                                <td className="p-2">{r.full_name}</td>
-                                <td className="p-2">{r.phone}</td>
-                                <td className="p-2 text-right">
-                                  {r.pledge.toLocaleString()}
-                                </td>
-                                <td className="p-2 text-right">
-                                  {r.contribution.toLocaleString()}
-                                </td>
-                              </tr>
-                            ))}
-                            {!usersQuery.data?.length && (
-                              <tr>
-                                <td colSpan={4} className="p-6 text-center text-white/60">
-                                  No members yet
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
+
+                      {(usersQuery.data?.guestCount ?? 0) > 0 && (
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-white text-sm">
+                          <span className="text-white/60">Guest contributions (anonymous): </span>
+                          <span className="font-semibold">
+                            {usersQuery.data?.guestCount} · TZS{" "}
+                            {usersQuery.data?.guestTotal.toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => usersQuery.data && exportPDF(usersQuery.data)}
+                          disabled={!usersQuery.data}
+                          className="flex-1 bg-rose-500/20 hover:bg-rose-500/30 text-white border border-rose-400/40"
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Download PDF
+                        </Button>
+                        <Button
+                          onClick={() => usersQuery.data && exportExcel(usersQuery.data)}
+                          disabled={!usersQuery.data}
+                          className="flex-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-white border border-emerald-400/40"
+                        >
+                          <FileSpreadsheet className="w-4 h-4 mr-2" />
+                          Download Excel
+                        </Button>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
+
 
               {tab === "analytics" && (
                 <div className="space-y-4">
