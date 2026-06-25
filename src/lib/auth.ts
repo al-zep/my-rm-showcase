@@ -85,10 +85,10 @@ export async function signIn(phone: string): Promise<AuthSession> {
   return session;
 }
 
-export async function sendOtp(phone: string, full_name?: string) {
+export async function sendOtp(phone: string, full_name?: string, role?: string) {
   const client = createSupabaseClient();
   const { data, error } = await withTimeout(
-    client.functions.invoke("send-otp", { body: { phone, full_name } }),
+    client.functions.invoke("send-otp", { body: { phone, full_name, role } }),
     15000,
     "Kutuma OTP"
   );
@@ -98,10 +98,15 @@ export async function sendOtp(phone: string, full_name?: string) {
   return data;
 }
 
-export async function verifyOtp(phone: string, otp: string, full_name?: string): Promise<AuthSession> {
+export async function verifyOtp(
+  phone: string,
+  otp: string,
+  full_name?: string,
+  role?: string,
+): Promise<AuthSession> {
   const client = createSupabaseClient();
   const { data, error } = await withTimeout(
-    client.functions.invoke("verify-otp", { body: { phone, otp, full_name } }),
+    client.functions.invoke("verify-otp", { body: { phone, otp, full_name, role } }),
     10000,
     "Kuthibitisha OTP"
   );
