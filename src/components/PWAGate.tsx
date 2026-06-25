@@ -116,12 +116,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     setAuthLoading(true);
     try {
       if (isSignup) {
-        await sendOtp(phone, fullName.trim());
+        await sendOtp(phone, fullName.trim(), selectedRole || undefined);
         setAuthStep("otp");
         setOtpCountdown(300);
         startCountdown();
       } else {
         await signIn(phone);
+        setNavLoading(true);
         window.location.assign("/dashboard");
       }
     } catch (err: any) {
