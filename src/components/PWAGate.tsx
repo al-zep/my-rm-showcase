@@ -142,7 +142,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     }
     setAuthLoading(true);
     try {
-      await verifyOtp(phone, otp, fullName);
+      await verifyOtp(phone, otp, fullName, selectedRole || undefined);
+      setNavLoading(true);
       window.location.assign("/dashboard");
     } catch (err: any) {
       setAuthError(err?.message || "Invalid OTP");
