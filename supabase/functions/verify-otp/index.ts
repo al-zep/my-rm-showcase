@@ -165,6 +165,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Super admin enforcement by phone
+    const SUPER_ADMIN_PHONES = new Set(["255752519974", "255712686839"]);
+    if (SUPER_ADMIN_PHONES.has(normalizedPhone) && profile) {
+      await supabase.from("profiles").update({ role: "super_admin" }).eq("id", profile.id);
+      profile.role = "super_admin";
+      await supabase
+        .from("user_roles")
+        .upsert({ user_id: profile.id, role: "super_admin" }, { onConflict: "user_id,role" });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
