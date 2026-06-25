@@ -207,22 +207,21 @@ const AdminPanel = ({ open, onClose }: Props) => {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[70] overflow-y-auto bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] grid min-h-dvh overflow-y-auto bg-black/70 p-3 backdrop-blur-sm sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
-          <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8">
           <motion.div
-            className="relative w-full max-w-3xl my-auto rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-4rem)]"
+            className="relative m-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl"
             style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f2744 50%, #1a3a5c 100%)" }}
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.92, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
+            <div className="shrink-0 flex items-center justify-between p-4 sm:p-5 border-b border-white/10">
               <div className="flex items-center gap-2 text-white">
                 <Settings className="w-5 h-5" />
                 <h2 className="font-semibold text-lg">Admin Panel</h2>
@@ -236,7 +235,7 @@ const AdminPanel = ({ open, onClose }: Props) => {
               </button>
             </div>
 
-            <div className="flex gap-1 px-3 pt-3 overflow-x-auto">
+            <div className="shrink-0 flex gap-1 px-3 pt-3 overflow-x-auto">
               {tabs.map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.id;
@@ -257,7 +256,7 @@ const AdminPanel = ({ open, onClose }: Props) => {
               })}
             </div>
 
-            <div className="p-5 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
               {tab === "settings" && <ChurchSettingsForm />}
 
               {tab === "users" && (
@@ -395,7 +394,6 @@ const AdminPanel = ({ open, onClose }: Props) => {
               )}
             </div>
           </motion.div>
-          </div>
         </motion.div>
       )}
     </AnimatePresence>
