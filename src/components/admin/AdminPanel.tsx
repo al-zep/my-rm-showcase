@@ -165,49 +165,133 @@ const aggregate = (
   return order.map((k) => ({ label: k, amount: buckets.get(k) || 0 }));
 };
 
-const exportPDF = (rows: UserRow[]) => {
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Chuo Kikuu SDA Church — Members Report", 14, 18);
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
-  autoTable(doc, {
-    startY: 30,
-    head: [["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"]],
-    body: rows.map((r) => [
-      r.full_name,
-      r.phone,
-      r.pledge.toLocaleString(),
-      r.contribution.toLocaleString(),
-    ]),
-    foot: [[
-      "Total",
-      "",
-      rows.reduce((s, r) => s + r.pledge, 0).toLocaleString(),
-      rows.reduce((s, r) => s + r.contribution, 0).toLocaleString(),
-    ]],
-    headStyles: { fillColor: [30, 58, 95] },
-    footStyles: { fillColor: [212, 160, 23], textColor: 20, fontStyle: "bold" },
+const buildSummary = (data: AdminExportData) => {
+  return CATEGORY_ORDER.map((cat) => {
+    const rows = data.sections[cat];
+    const pledge = rows.reduce((s, r) => s + r.pledge, 0);
+    const contribution = rows.reduce((s, r) => s + r.contribution, 0);
+    return { cat, count: rows.length, pledge, contribution };
   });
-  doc.save(`members-report-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
-const exportExcel = (rows: UserRow[]) => {
-  const wsData = [
-    ["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"],
-    ...rows.map((r) => [r.full_name, r.phone, r.pledge, r.contribution]),
+const exportPDF = (data: AdminExportData) => {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Chuo Kikuu SDA Church — Contributors Report", 14, 18);
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
+
+  let cursorY = 32;
+
+  CATEGORY_ORDER.forEach((cat) => {
+    const rows = data.sections[cat];
+    doc.setFontSize(12);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`${cat} (${rows.length})`, 14, cursorY);
+    cursorY += 4;
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"]],
+      body: rows.length
+        ? rows.map((r) => [
+            r.full_name,
+            r.phone,
+            r.pledge.toLocaleString(),
+            r.contribution.toLocaleString(),
+          ])
+        : [["—", "—", "—", "—"]],
+      foot: [[
+        "Subtotal",
+        "",
+        rows.reduce((s, r) => s + r.pledge, 0).toLocaleString(),
+        rows.reduce((s, r) => s + r.contribution, 0).toLocaleString(),
+      ]],
+      headStyles: { fillColor: [30, 58, 95] },
+      footStyles: { fillColor: [212, 160, 23], textColor: 20, fontStyle: "bold" },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+    cursorY = (doc as any).lastAutoTable.finalY + 8;
+    if (cursorY > 260) {
+      doc.addPage();
+      cursorY = 20;
+    }
+  });
+
+  // Guest anonymous contributions (visitors/regulars who didn't sign up)
+  if (data.guestCount > 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`Guest Contributions — Anonymous (${data.guestCount})`, 14, cursorY);
+    cursorY += 4;
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Description", "Count", "Total (TZS)"]],
+      body: [["Visitors & Regulars (unregistered)", String(data.guestCount), data.guestTotal.toLocaleString()]],
+      headStyles: { fillColor: [30, 58, 95] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+    cursorY = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  // Grand total
+  const allRows = CATEGORY_ORDER.flatMap((c) => data.sections[c]);
+  const grandPledge = allRows.reduce((s, r) => s + r.pledge, 0);
+  const grandContrib = allRows.reduce((s, r) => s + r.contribution, 0) + data.guestTotal;
+  if (cursorY > 260) { doc.addPage(); cursorY = 20; }
+  autoTable(doc, {
+    startY: cursorY,
+    head: [["Grand Total", "Pledge (TZS)", "Contribution (TZS)"]],
+    body: [["All categories", grandPledge.toLocaleString(), grandContrib.toLocaleString()]],
+    headStyles: { fillColor: [212, 160, 23], textColor: 20 },
+    styles: { fontSize: 10, fontStyle: "bold" },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.save(`contributors-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
+const exportExcel = (data: AdminExportData) => {
+  const wb = XLSX.utils.book_new();
+
+  // Summary sheet
+  const summary = buildSummary(data);
+  const summaryAoa: (string | number)[][] = [
+    ["Category", "People", "Pledge (TZS)", "Contribution (TZS)"],
+    ...summary.map((s) => [s.cat, s.count, s.pledge, s.contribution]),
+    ["Guest (Anonymous)", data.guestCount, 0, data.guestTotal],
     [
-      "Total",
-      "",
-      rows.reduce((s, r) => s + r.pledge, 0),
-      rows.reduce((s, r) => s + r.contribution, 0),
+      "Grand Total",
+      summary.reduce((s, x) => s + x.count, 0) + data.guestCount,
+      summary.reduce((s, x) => s + x.pledge, 0),
+      summary.reduce((s, x) => s + x.contribution, 0) + data.guestTotal,
     ],
   ];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 20 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Members");
-  XLSX.writeFile(wb, `members-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const summaryWs = XLSX.utils.aoa_to_sheet(summaryAoa);
+  summaryWs["!cols"] = [{ wch: 22 }, { wch: 10 }, { wch: 18 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, summaryWs, "Summary");
+
+  // One sheet per category
+  CATEGORY_ORDER.forEach((cat) => {
+    const rows = data.sections[cat];
+    const aoa: (string | number)[][] = [
+      ["Full Name", "Phone", "Pledge (TZS)", "Contribution (TZS)"],
+      ...rows.map((r) => [r.full_name, r.phone, r.pledge, r.contribution]),
+      [
+        "Subtotal",
+        "",
+        rows.reduce((s, r) => s + r.pledge, 0),
+        rows.reduce((s, r) => s + r.contribution, 0),
+      ],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 18 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, cat);
+  });
+
+  XLSX.writeFile(wb, `contributors-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
 interface Props {
