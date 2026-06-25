@@ -207,14 +207,15 @@ const AdminPanel = ({ open, onClose }: Props) => {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[70] overflow-y-auto bg-black/70 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
+          <div className="min-h-full flex items-start sm:items-center justify-center p-4 py-8">
           <motion.div
-            className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col"
+            className="relative w-full max-w-3xl my-auto rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-4rem)]"
             style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f2744 50%, #1a3a5c 100%)" }}
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -394,6 +395,7 @@ const AdminPanel = ({ open, onClose }: Props) => {
               )}
             </div>
           </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
