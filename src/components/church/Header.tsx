@@ -30,10 +30,9 @@ const Header = () => {
               onClick={() => setAdminOpen(true)}
               aria-label="Admin settings"
               title="Admin Panel"
-              className="relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-church-blue bg-amber-100 hover:bg-amber-200 transition-colors border border-amber-300"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-church-blue bg-amber-100 hover:bg-amber-200 transition-colors border border-amber-300"
             >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin</span>
+              <Settings className="w-5 h-5" />
             </button>
           )}
         </nav>
