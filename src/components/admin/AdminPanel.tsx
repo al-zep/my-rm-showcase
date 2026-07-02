@@ -194,47 +194,49 @@ const exportPDF = async (data: AdminExportData) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const centerX = pageWidth / 2;
 
-  // Hero section
+  // Hero section — dark navy band with gold accent line
+  const heroHeight = 70;
+  doc.setFillColor(22, 56, 74); // #16384a
+  doc.rect(0, 0, pageWidth, heroHeight, "F");
+  doc.setFillColor(217, 163, 0); // #d9a300
+  doc.rect(0, heroHeight, pageWidth, 2.5, "F");
+
   const logoDataUrl = await loadLogoDataUrl();
-  let heroY = 15;
+  let heroY = 12;
   if (logoDataUrl) {
-    const logoSize = 26;
+    const logoSize = 22;
     doc.addImage(logoDataUrl, "PNG", centerX - logoSize / 2, heroY, logoSize, logoSize);
     heroY += logoSize + 6;
   } else {
-    heroY += 8;
+    heroY += 10;
   }
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(30, 58, 95);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(255, 255, 255);
   doc.text("Seventh Day Adventist Church", centerX, heroY, { align: "center" });
   heroY += 6;
 
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(90, 90, 90);
+  doc.setTextColor(230, 230, 230);
   doc.text("Chuo Kikuu", centerX, heroY, { align: "center" });
-  heroY += 9;
+  heroY += 8;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(16);
+  doc.setTextColor(255, 255, 255);
   doc.text("Contributors Report", centerX, heroY, { align: "center" });
-  heroY += 6;
 
+  // Meta line below hero
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, centerX, heroY, { align: "center" });
-  heroY += 4;
-
-  // divider
-  doc.setDrawColor(212, 160, 23);
-  doc.setLineWidth(0.6);
-  doc.line(14, heroY + 2, pageWidth - 14, heroY + 2);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, centerX, heroHeight + 10, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
-  let cursorY = heroY + 10;
+  let cursorY = heroHeight + 18;
+
 
   CATEGORY_ORDER.forEach((cat) => {
     const rows = data.sections[cat];
