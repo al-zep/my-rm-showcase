@@ -183,6 +183,33 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           created_at: string
@@ -456,6 +483,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      broadcast_weekly_sabbath_notification: { Args: never; Returns: undefined }
       get_public_dashboard: { Args: never; Returns: Json }
       has_role: {
         Args: {
@@ -464,6 +492,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      reset_notifications_monthly: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
