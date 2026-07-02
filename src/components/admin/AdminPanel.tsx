@@ -174,14 +174,67 @@ const buildSummary = (data: AdminExportData) => {
   });
 };
 
-const exportPDF = (data: AdminExportData) => {
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Chuo Kikuu SDA Church — Contributors Report", 14, 18);
-  doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 25);
+const loadLogoDataUrl = async (): Promise<string | null> => {
+  try {
+    const res = await fetch("/sdaLogo.png");
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
 
-  let cursorY = 32;
+const exportPDF = async (data: AdminExportData) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const centerX = pageWidth / 2;
+
+  // Hero section
+  const logoDataUrl = await loadLogoDataUrl();
+  let heroY = 15;
+  if (logoDataUrl) {
+    const logoSize = 26;
+    doc.addImage(logoDataUrl, "PNG", centerX - logoSize / 2, heroY, logoSize, logoSize);
+    heroY += logoSize + 6;
+  } else {
+    heroY += 8;
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(30, 58, 95);
+  doc.text("Seventh Day Adventist Church", centerX, heroY, { align: "center" });
+  heroY += 6;
+
+  doc.setFontSize(10);
+  doc.setTextColor(90, 90, 90);
+  doc.text("Chuo Kikuu", centerX, heroY, { align: "center" });
+  heroY += 9;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(20, 20, 20);
+  doc.text("Contributors Report", centerX, heroY, { align: "center" });
+  heroY += 6;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(120, 120, 120);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, centerX, heroY, { align: "center" });
+  heroY += 4;
+
+  // divider
+  doc.setDrawColor(212, 160, 23);
+  doc.setLineWidth(0.6);
+  doc.line(14, heroY + 2, pageWidth - 14, heroY + 2);
+  doc.setTextColor(0, 0, 0);
+
+  let cursorY = heroY + 10;
 
   CATEGORY_ORDER.forEach((cat) => {
     const rows = data.sections[cat];
