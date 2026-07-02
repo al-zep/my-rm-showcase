@@ -361,7 +361,7 @@ const Dashboard = () => {
           </div>
         );
       case "reports":
-        return <ReportsSection profile={profile} contributions={contributions} />;
+        return <ReportsSection remainingGoal={balance} goalAmount={goalAmount} contributions={contributions} />;
       case "church-settings":
         return isAdmin ? (
           <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f2744 50%, #1a3a5c 100%)" }}>
