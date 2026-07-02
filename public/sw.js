@@ -3,7 +3,7 @@
  * - CacheFirst for same-origin static assets (images, fonts).
  * - Versioned cache name so updates evict old caches.
  */
-const VERSION = "v1.4.0-notifications-bell";
+const VERSION = "v1.4.1-notif-center-mobile";
 const STATIC_CACHE = `sda-static-${VERSION}`;
 const RUNTIME_CACHE = `sda-runtime-${VERSION}`;
 
