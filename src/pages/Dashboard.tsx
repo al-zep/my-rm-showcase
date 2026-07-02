@@ -13,6 +13,7 @@ import { createSupabaseClient } from "../lib/supabase/client.ts";
 import Header from "@/components/church/Header";
 import { cn } from "@/lib/utils";
 import SplashScreen from "@/components/SplashScreen";
+import NotificationsBell from "@/components/dashboard/NotificationsBell";
 import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 
 // Dashboard Components
