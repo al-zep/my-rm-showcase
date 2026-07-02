@@ -13,6 +13,7 @@ import { createSupabaseClient } from "../lib/supabase/client.ts";
 import Header from "@/components/church/Header";
 import { cn } from "@/lib/utils";
 import SplashScreen from "@/components/SplashScreen";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 
 // Dashboard Components
 import OverviewCard from "@/components/dashboard/OverviewCard";
@@ -162,35 +163,80 @@ const ProjectsList = ({ projects }: { projects: any[] }) => {
   );
 };
 
-const ReportsSection = ({ profile, contributions }: { profile: any; contributions: any[] }) => {
+const ReportsSection = ({ remainingGoal, goalAmount, contributions }: { remainingGoal: number; goalAmount: number; contributions: any[] }) => {
   const completed = contributions.filter((c: any) => c.status === "completed");
-  const totalContributed = completed.reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
-  const contributionCount = completed.length;
-  const avgContribution = contributionCount > 0 ? totalContributed / contributionCount : 0;
+  const totalContributed = completed.reduce((sum: number, c: any) => sum + Number(c.amount || 0), 0);
 
-  const stats = [
-    { label: "Total Contributed", value: `TZS ${totalContributed.toLocaleString()}` },
-    { label: "Contributions Made", value: contributionCount.toString() },
-    { label: "Average Contribution", value: `TZS ${Math.round(avgContribution).toLocaleString()}` },
-{ label: "Annual Goal", value: `TZS ${(profile?.annual_goal ?? 0)?.toLocaleString() || 0}` },
-{ label: "Goal Progress", value: `${profile?.annual_goal && profile?.annual_goal > 0 ? Math.round(( (profile.total_contributed ?? 0) / profile.annual_goal ) * 100) : 0}%` },
-    { label: "Current Level", value: profile?.level || "Seed Sower" },
-  ];
+  // Group contributions by month (YYYY-MM)
+  const byMonth = new Map<string, number>();
+  completed.forEach((c: any) => {
+    const d = c.created_at ? new Date(c.created_at) : new Date();
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    byMonth.set(key, (byMonth.get(key) || 0) + Number(c.amount || 0));
+  });
+  const chartData = Array.from(byMonth.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, amount]) => {
+      const [y, m] = key.split("-");
+      const label = new Date(Number(y), Number(m) - 1, 1).toLocaleString("en-US", { month: "short" });
+      return { label, amount };
+    });
+
+  const progress = goalAmount > 0 ? Math.min(100, (totalContributed / goalAmount) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {stats.map((stat, index) => (
-        <motion.div
-          key={stat.label}
-          className="p-4 rounded-xl bg-white/5"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.05 }}
-        >
-          <p className="text-xs text-white/50 mb-1">{stat.label}</p>
-          <p className="text-lg font-bold text-white">{stat.value}</p>
-        </motion.div>
-      ))}
+    <div className="space-y-4">
+      <motion.div
+        className="p-5 rounded-2xl bg-gradient-to-br from-amber-400/20 to-amber-500/5 border border-amber-400/30"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <p className="text-xs uppercase tracking-wide text-amber-300/80 mb-1">My Remaining Goal</p>
+        <p className="text-3xl font-bold text-white mb-3">TZS {Math.round(remainingGoal).toLocaleString()}</p>
+        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-300"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.8 }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-white/60 mt-2">
+          <span>TZS {Math.round(totalContributed).toLocaleString()} contributed</span>
+          <span>Goal: TZS {Math.round(goalAmount).toLocaleString()}</span>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="p-4 rounded-2xl bg-white/5 border border-white/10"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <p className="text-sm font-semibold text-white mb-3">My Contributions</p>
+        {chartData.length === 0 ? (
+          <div className="py-8 text-center text-white/50 text-sm">No contributions yet</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+              <defs>
+                <linearGradient id="contribFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f5c451" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="#f5c451" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.08)" vertical={false} />
+              <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.5)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v/1000)}k` : `${v}`} />
+              <Tooltip
+                contentStyle={{ background: "#0f2744", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, color: "white" }}
+                formatter={(v: any) => [`TZS ${Number(v).toLocaleString()}`, "Amount"]}
+              />
+              <Area type="monotone" dataKey="amount" stroke="#f5c451" strokeWidth={2} fill="url(#contribFill)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </motion.div>
     </div>
   );
 };
@@ -315,7 +361,7 @@ const Dashboard = () => {
           </div>
         );
       case "reports":
-        return <ReportsSection profile={profile} contributions={contributions} />;
+        return <ReportsSection remainingGoal={balance} goalAmount={goalAmount} contributions={contributions} />;
       case "church-settings":
         return isAdmin ? (
           <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f2744 50%, #1a3a5c 100%)" }}>
