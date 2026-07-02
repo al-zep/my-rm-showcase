@@ -97,7 +97,7 @@ const NotificationsBell = ({ userId }: { userId: string | undefined }) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="absolute right-0 mt-3 w-[92vw] sm:w-96 max-h-[70vh] rounded-2xl shadow-2xl overflow-hidden z-50 border border-white/15"
+            className="fixed left-1/2 -translate-x-1/2 top-20 w-[92vw] max-w-sm sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:translate-x-0 sm:mt-3 sm:w-96 sm:max-w-none max-h-[70vh] rounded-2xl shadow-2xl overflow-hidden z-50 border border-white/15"
             style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f2744 55%, #1a3a5c 100%)" }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
