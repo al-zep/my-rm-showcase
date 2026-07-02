@@ -226,7 +226,7 @@ const exportPDF = async (data: AdminExportData) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(255, 255, 255);
-  doc.text("Contributors Report", centerX, heroY, { align: "center" });
+  doc.text("Resource Mobilization Contribution Report", centerX, heroY, { align: "center" });
 
   // Meta line below hero
   doc.setFont("helvetica", "normal");
@@ -305,7 +305,7 @@ const exportPDF = async (data: AdminExportData) => {
     margin: { left: 14, right: 14 },
   });
 
-  doc.save(`contributors-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`resource-mobilization-contribution-report-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 const exportExcel = (data: AdminExportData) => {
@@ -346,7 +346,7 @@ const exportExcel = (data: AdminExportData) => {
     XLSX.utils.book_append_sheet(wb, ws, cat);
   });
 
-  XLSX.writeFile(wb, `contributors-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, `resource-mobilization-contribution-report-${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
 interface Props {
@@ -432,7 +432,7 @@ const AdminPanel = ({ open, onClose }: Props) => {
               {tab === "users" && (
                 <div className="space-y-4">
                   <div className="text-white">
-                    <p className="font-semibold">Export Contributors Report</p>
+                    <p className="font-semibold">Export Resource Mobilization Contribution Report</p>
                     <p className="text-xs text-white/60">
                       Documents are grouped into Members, Students, Regulars & Visitors with name, phone, pledge and contribution.
                     </p>
