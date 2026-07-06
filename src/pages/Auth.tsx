@@ -29,7 +29,7 @@ const Auth = () => {
     setLoading(true);
     try {
       await signIn(phone);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: any) {
       setErrorMsg(err?.message || "Imeshindwa kuingia");
     } finally {
@@ -69,7 +69,7 @@ const Auth = () => {
     setLoading(true);
     try {
       await verifyOtp(phone, otp, fullName);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: any) {
       setErrorMsg(err?.message || "OTP si sahihi au imekwisha muda");
     } finally {
