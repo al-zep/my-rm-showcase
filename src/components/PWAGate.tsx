@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Church, Eye, GraduationCap, LogIn, Phone, UserCheck, UserPlus, X } from "lucide-react";
 import { isPWAEntryExperience } from "@/lib/pwa";
+import { getSession } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
@@ -65,6 +66,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
 
   if (!mounted && !pwaMode) return <>{children}</>;
   if (!pwaMode) return <>{children}</>;
+
+  // If user is signed in OR is on a non-root route (dashboard, etc.),
+  // bypass the PWA landing gate and let the app render normally.
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    if (path !== "/" || getSession()) return <>{children}</>;
+  }
 
   const resetAuthForm = () => {
     setAuthStep("phone");
