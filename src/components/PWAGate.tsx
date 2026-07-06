@@ -67,6 +67,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   if (!mounted && !pwaMode) return <>{children}</>;
   if (!pwaMode) return <>{children}</>;
 
+  // If user is signed in OR is on a non-root route (dashboard, etc.),
+  // bypass the PWA landing gate and let the app render normally.
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    if (path !== "/" || getSession()) return <>{children}</>;
+  }
+
   const resetAuthForm = () => {
     setAuthStep("phone");
     setFullName("");
