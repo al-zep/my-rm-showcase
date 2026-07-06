@@ -29,7 +29,7 @@ const Auth = () => {
     setLoading(true);
     try {
       await signIn(phone);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: any) {
       setErrorMsg(err?.message || "Imeshindwa kuingia");
     } finally {
