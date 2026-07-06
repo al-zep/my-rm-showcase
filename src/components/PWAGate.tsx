@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Church, Eye, GraduationCap, LogIn, Phone, UserCheck, UserPlus, X } from "lucide-react";
 import { isPWAEntryExperience } from "@/lib/pwa";
+import { getSession } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
