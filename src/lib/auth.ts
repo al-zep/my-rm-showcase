@@ -63,15 +63,35 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
   ]);
 }
 
-export async function signIn(phone: string): Promise<AuthSession> {
+async function getFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const response = (error as { context?: Response })?.context;
+  if (response) {
+    try {
+      const body = await response.clone().json();
+      if (typeof body?.error === "string") return body.error;
+    } catch {
+      // Fall through to the SDK error message.
+    }
+  }
+  return (error as Error)?.message || fallback;
+}
+
+export function validateNewPassword(password: string, confirmation: string): string | null {
+  if (password.length < 8) return "Password lazima iwe na herufi 8 au zaidi";
+  if (password.length > 128) return "Password isizidi herufi 128";
+  if (password !== confirmation) return "Password hazilingani";
+  return null;
+}
+
+export async function signIn(phone: string, password: string): Promise<AuthSession> {
   const client = createSupabaseClient();
   const { data, error } = await withTimeout(
-    client.functions.invoke("sign-in", { body: { phone } }),
+    client.functions.invoke("sign-in", { body: { phone, password } }),
     10000,
     "Kuingia"
   );
 
-  if (error) throw new Error(error.message || "Failed to sign in");
+  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kuingia"));
   if (!data?.success) throw new Error(data?.error || "Failed to sign in");
 
   const session: AuthSession = {
@@ -101,17 +121,18 @@ export async function sendOtp(phone: string, full_name?: string, role?: string) 
 export async function verifyOtp(
   phone: string,
   otp: string,
+  password: string,
   full_name?: string,
   role?: string,
 ): Promise<AuthSession> {
   const client = createSupabaseClient();
   const { data, error } = await withTimeout(
-    client.functions.invoke("verify-otp", { body: { phone, otp, full_name, role } }),
-    10000,
+    client.functions.invoke("verify-otp", { body: { phone, otp, password, full_name, role } }),
+    15000,
     "Kuthibitisha OTP"
   );
 
-  if (error) throw new Error(error.message || "Failed to verify OTP");
+  if (error) throw new Error(await getFunctionErrorMessage(error, "Imeshindwa kuthibitisha OTP"));
   if (!data?.success) throw new Error(data?.error || "Failed to verify OTP");
 
   const session: AuthSession = {

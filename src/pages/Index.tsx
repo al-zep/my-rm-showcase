@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, GraduationCap, Church, Eye, UserCheck, X, LogIn, UserPlus, Phone } from "lucide-react";
+import { ArrowRight, GraduationCap, Church, Eye, UserCheck, X, LogIn, UserPlus, Phone, LockKeyhole } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import ProgressRing from "@/components/church/ProgressRing";
 import StatsCard from "@/components/church/StatsCard";
@@ -12,7 +12,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { ChuoKikuuFriendsCard, ImpactCard, CallToActionCard, CurrentProjectsCard } from "@/components/church/ExpandableCard";
 import PaymentDialog from "@/components/payments/PaymentDialog";
 import { usePublicDashboard } from "@/hooks/useChurchData";
-import { sendOtp, verifyOtp, signIn, getSession } from "@/lib/auth";
+import { sendOtp, verifyOtp, signIn, getSession, validateNewPassword } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const ANNUAL_GOAL = 500000; // Configurable church annual goal
@@ -74,6 +74,8 @@ const Index = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
 
   // Payment dialog state (replaces all guest payment form state)
@@ -99,6 +101,10 @@ const Index = () => {
       setAuthError("Enter your full name for signup");
       return;
     }
+    if (!isSignup && !password) {
+      setAuthError("Enter your password");
+      return;
+    }
 
     setAuthLoading(true);
     try {
@@ -109,8 +115,8 @@ const Index = () => {
         setOtpCountdown(300);
         startCountdown();
       } else {
-        // Sign In: Direct login with phone only, NO OTP
-        const session = await signIn(phone);
+        // Sign In: phone and the password created during OTP signup.
+        await signIn(phone, password);
         navigate("/dashboard", { replace: true });
       }
     } catch (err: any) {
@@ -127,9 +133,14 @@ const Index = () => {
       setAuthError("Enter 6-digit OTP");
       return;
     }
+    const passwordError = validateNewPassword(password, confirmPassword);
+    if (passwordError) {
+      setAuthError(passwordError);
+      return;
+    }
     setAuthLoading(true);
     try {
-      const session = await verifyOtp(phone, otp, fullName);
+      await verifyOtp(phone, otp, password, fullName);
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       setAuthError(err?.message || "Invalid OTP");
@@ -172,6 +183,8 @@ const Index = () => {
     setFullName("");
     setPhone("");
     setOtp("");
+    setPassword("");
+    setConfirmPassword("");
     setOtpCountdown(0);
     setAuthError(null);
     setAuthDropdown(null);
@@ -425,14 +438,14 @@ const totalCollected = data?.total_collected ?? 0;
       <AnimatePresence>
         {authDropdown && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => { setAuthDropdown(null); resetAuthForm(); }}
           >
             <motion.div
-              className="relative w-[90vw] sm:w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-[90vw] sm:w-full max-w-md max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -457,14 +470,14 @@ const totalCollected = data?.total_collected ?? 0;
                     {authStep === "otp" ? "Enter Code" : isSignup ? "Sign Up" : "Sign In"}
                   </h1>
                   <p className="text-white/80 text-sm drop-shadow-lg">
-                    {authStep === "otp" ? `OTP sent to ${phone}. Enter code to continue.` : isSignup ? "Enter name and phone to receive OTP" : "Enter phone to sign in directly"}
+                    {authStep === "otp" ? `OTP sent to ${phone}. Enter the code and create your password.` : isSignup ? "Enter name and phone to receive OTP" : "Enter your phone and password to sign in"}
                   </p>
 
                 {authStep === "phone" && (
                   <div className="flex items-center justify-center gap-2 mt-4">
                     <button
                       type="button"
-                      onClick={() => setIsSignup(true)}
+                      onClick={() => { setIsSignup(true); setPassword(""); setConfirmPassword(""); setAuthError(null); }}
                       className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
                         isSignup
                           ? "bg-gold text-primary font-semibold"
@@ -476,7 +489,7 @@ const totalCollected = data?.total_collected ?? 0;
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsSignup(false)}
+                      onClick={() => { setIsSignup(false); setPassword(""); setConfirmPassword(""); setAuthError(null); }}
                       className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
                         !isSignup
                           ? "bg-gold text-primary font-semibold"
@@ -511,8 +524,23 @@ const totalCollected = data?.total_collected ?? 0;
                     placeholder={isSignup ? "0712345678 or 255712345678" : "0712345678"}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    className="h-14 text-lg text-center rounded-2xl bg-white/90 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30"
+                    className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30"
+                    autoComplete="tel"
                   />
+                  {!isSignup && (
+                    <div className="relative">
+                      <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-14 pl-12 text-lg rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30"
+                        autoComplete="current-password"
+                        maxLength={128}
+                      />
+                    </div>
+                  )}
 
                   <motion.button
                     type="submit"
@@ -550,6 +578,29 @@ const totalCollected = data?.total_collected ?? 0;
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
+                  <div className="relative">
+                    <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                    <Input
+                      type="password"
+                      placeholder="Create password (8+ characters)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-14 pl-12 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold"
+                      autoComplete="new-password"
+                      minLength={8}
+                      maxLength={128}
+                    />
+                  </div>
+                  <Input
+                    type="password"
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="h-14 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold"
+                    autoComplete="new-password"
+                    minLength={8}
+                    maxLength={128}
+                  />
                   <motion.button
                     type="submit"
                     disabled={authLoading || otp.length !== 6}
@@ -563,7 +614,7 @@ const totalCollected = data?.total_collected ?? 0;
                         Verifying...
                       </span>
                     ) : (
-                      "Continue to Dashboard"
+                      "Create Password & Sign In"
                     )}
                   </motion.button>
                   <div className="flex items-center justify-center gap-2 text-xs text-white/70">

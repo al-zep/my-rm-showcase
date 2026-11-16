@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794820533544,
+      "tag": "0000_add_private_user_password_credentials",
+      "breakpoints": true
+    }
+  ]
+}

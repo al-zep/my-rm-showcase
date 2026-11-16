@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Church, Eye, GraduationCap, LogIn, Phone, UserCheck, UserPlus, X } from "lucide-react";
+import { ArrowRight, Church, Eye, GraduationCap, LockKeyhole, LogIn, Phone, UserCheck, UserPlus, X } from "lucide-react";
 import { isPWAEntryExperience } from "@/lib/pwa";
 import { getSession } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { sendOtp, signIn, verifyOtp } from "@/lib/auth";
+import { sendOtp, signIn, validateNewPassword, verifyOtp } from "@/lib/auth";
 import PaymentDialog from "@/components/payments/PaymentDialog";
 import SplashScreen from "@/components/SplashScreen";
 
@@ -30,7 +30,7 @@ const CATEGORIES = [
  */
 export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  const [pwaMode, setPwaMode] = useState(() => isPWAEntryExperience());
+  const [pwaMode, setPwaMode] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
   const [authDropdown, setAuthDropdown] = useState<"signin" | "signup" | null>(null);
@@ -43,6 +43,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [navLoading, setNavLoading] = useState(false);
@@ -79,6 +81,8 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
     setFullName("");
     setPhone("");
     setOtp("");
+    setPassword("");
+    setConfirmPassword("");
     setOtpCountdown(0);
     setAuthError(null);
     setAuthDropdown(null);
@@ -123,6 +127,10 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       setAuthError("Enter your full name for signup");
       return;
     }
+    if (!isSignup && !password) {
+      setAuthError("Enter your password");
+      return;
+    }
     setAuthLoading(true);
     try {
       if (isSignup) {
@@ -131,7 +139,7 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
         setOtpCountdown(300);
         startCountdown();
       } else {
-        await signIn(phone);
+        await signIn(phone, password);
         setNavLoading(true);
         window.location.assign("/dashboard");
       }
@@ -149,9 +157,14 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       setAuthError("Enter 6-digit OTP");
       return;
     }
+    const passwordError = validateNewPassword(password, confirmPassword);
+    if (passwordError) {
+      setAuthError(passwordError);
+      return;
+    }
     setAuthLoading(true);
     try {
-      await verifyOtp(phone, otp, fullName, selectedRole || undefined);
+      await verifyOtp(phone, otp, password, fullName, selectedRole || undefined);
       setNavLoading(true);
       window.location.assign("/dashboard");
     } catch (err: any) {
@@ -323,14 +336,14 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
       <AnimatePresence>
         {authDropdown && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={resetAuthForm}
           >
             <motion.div
-              className="relative w-[90vw] sm:w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-[90vw] sm:w-full max-w-md max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -348,14 +361,14 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                       {authStep === "otp" ? "Enter Code" : isSignup ? "Sign Up" : "Sign In"}
                     </h1>
                     <p className="text-white/80 text-sm drop-shadow-lg">
-                      {authStep === "otp" ? `OTP sent to ${phone}. Enter code to continue.` : isSignup ? "Enter name and phone to receive OTP" : "Enter phone to sign in directly"}
+                      {authStep === "otp" ? `OTP sent to ${phone}. Enter the code and create your password.` : isSignup ? "Enter name and phone to receive OTP" : "Enter your phone and password to sign in"}
                     </p>
                     {authStep === "phone" && (
                       <div className="flex items-center justify-center gap-2 mt-4">
-                        <button type="button" onClick={() => setIsSignup(true)} className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${isSignup ? "bg-gold text-primary font-semibold" : "bg-white/20 text-white/70"}`}>
+                        <button type="button" onClick={() => { setIsSignup(true); setPassword(""); setConfirmPassword(""); setAuthError(null); }} className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${isSignup ? "bg-gold text-primary font-semibold" : "bg-white/20 text-white/70"}`}>
                           <UserPlus className="w-3 h-3" /> Sign Up
                         </button>
-                        <button type="button" onClick={() => setIsSignup(false)} className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${!isSignup ? "bg-gold text-primary font-semibold" : "bg-white/20 text-white/70"}`}>
+                        <button type="button" onClick={() => { setIsSignup(false); setPassword(""); setConfirmPassword(""); setAuthError(null); }} className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${!isSignup ? "bg-gold text-primary font-semibold" : "bg-white/20 text-white/70"}`}>
                           <LogIn className="w-3 h-3" /> Sign In
                         </button>
                       </div>
@@ -371,7 +384,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                 {authStep === "phone" ? (
                   <form onSubmit={handlePhoneSubmit} className="space-y-4">
                     {isSignup && <Input placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />}
-                    <Input type="tel" placeholder={isSignup ? "0712345678 or 255712345678" : "0712345678"} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" />
+                    <Input type="tel" placeholder={isSignup ? "0712345678 or 255712345678" : "0712345678"} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} className="h-14 text-lg text-center rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" autoComplete="tel" />
+                    {!isSignup && (
+                      <div className="relative">
+                        <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                        <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 pl-12 text-lg rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 backdrop-blur-sm border-2 border-white/30 focus:border-gold focus:ring-2 focus:ring-gold/30" autoComplete="current-password" maxLength={128} />
+                      </div>
+                    )}
                     <motion.button type="submit" disabled={authLoading} className="w-full h-14 rounded-2xl bg-gradient-to-r from-gold to-amber-500 text-white font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       {authLoading ? (isSignup ? "Sending OTP..." : "Signing In...") : isSignup ? "Send OTP" : "Sign In"}
                     </motion.button>
@@ -385,8 +404,13 @@ export default function PWAGate({ children }: { children: React.ReactNode }) {
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
+                    <div className="relative">
+                      <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                      <Input type="password" placeholder="Create password (8+ characters)" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 pl-12 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold" autoComplete="new-password" minLength={8} maxLength={128} />
+                    </div>
+                    <Input type="password" placeholder="Confirm password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-14 rounded-2xl bg-white/90 text-slate-900 placeholder:text-slate-500 border-2 border-white/30 focus:border-gold" autoComplete="new-password" minLength={8} maxLength={128} />
                     <motion.button type="submit" disabled={authLoading || otp.length !== 6} className="w-full h-14 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      {authLoading ? "Verifying..." : "Continue to Dashboard"}
+                      {authLoading ? "Verifying..." : "Create Password & Sign In"}
                     </motion.button>
                     <div className="flex items-center justify-center gap-2 text-xs text-white/70">
                       <span>Didn't get code?</span>

@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { signIn, sendOtp, verifyOtp, normalizePhone } from "@/lib/auth";
-import { Phone, Shield, User, Loader2 } from "lucide-react";
+import { signIn, sendOtp, verifyOtp, normalizePhone, validateNewPassword } from "@/lib/auth";
+import { Phone, Shield, User, Loader2, LockKeyhole } from "lucide-react";
 
 type SignupStep = "phone" | "otp";
 
@@ -15,6 +15,8 @@ const Auth = () => {
   const [phone, setPhone] = useState("");
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -25,10 +27,14 @@ const Auth = () => {
       setErrorMsg("Tafadhali ingiza namba ya simu");
       return;
     }
+    if (!password) {
+      setErrorMsg("Tafadhali ingiza password yako");
+      return;
+    }
 
     setLoading(true);
     try {
-      await signIn(phone);
+      await signIn(phone, password);
       navigate("/dashboard");
     } catch (err: any) {
       setErrorMsg(err?.message || "Imeshindwa kuingia");
@@ -65,10 +71,15 @@ const Auth = () => {
       setErrorMsg("Tafadhali ingiza OTP yenye tarakimu 6");
       return;
     }
+    const passwordError = validateNewPassword(password, confirmPassword);
+    if (passwordError) {
+      setErrorMsg(passwordError);
+      return;
+    }
 
     setLoading(true);
     try {
-      await verifyOtp(phone, otp, fullName);
+      await verifyOtp(phone, otp, password, fullName);
       navigate("/dashboard");
     } catch (err: any) {
       setErrorMsg(err?.message || "OTP si sahihi au imekwisha muda");
@@ -80,11 +91,13 @@ const Auth = () => {
   const resetSignup = () => {
     setSignupStep("phone");
     setOtp("");
+    setPassword("");
+    setConfirmPassword("");
     setErrorMsg(null);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md border-border shadow-lg">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
@@ -96,7 +109,7 @@ const Auth = () => {
               ? "Ingiza namba yako ya simu kuingia"
               : signupStep === "phone"
               ? "Jisajili kwa namba yako ya simu"
-              : "Ingiza OTP uliyotumwa kwenye simu yako"}
+              : "Ingiza OTP kisha tengeneza password yako"}
           </CardDescription>
         </CardHeader>
 
@@ -120,7 +133,7 @@ const Auth = () => {
               </div>
             )}
 
-            {/* SIGN IN - Phone only */}
+            {/* SIGN IN - Phone + password */}
             <TabsContent value="signin" className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Namba ya Simu</label>
@@ -133,6 +146,23 @@ const Auth = () => {
                     onChange={(e) => setPhone(e.target.value)}
                     className="pl-10"
                     disabled={loading}
+                    autoComplete="tel"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Password</label>
+                <div className="relative">
+                  <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    placeholder="Ingiza password yako"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    disabled={loading}
+                    autoComplete="current-password"
+                    maxLength={128}
                   />
                 </div>
               </div>
@@ -197,9 +227,39 @@ const Auth = () => {
                       OTP imetumwa kwa {normalizePhone(phone)}
                     </p>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Tengeneza Password</label>
+                    <div className="relative">
+                      <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="password"
+                        placeholder="Angalau herufi 8"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10"
+                        disabled={loading}
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={128}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Thibitisha Password</label>
+                    <Input
+                      type="password"
+                      placeholder="Andika password tena"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={loading}
+                      autoComplete="new-password"
+                      minLength={8}
+                      maxLength={128}
+                    />
+                  </div>
                   <Button onClick={handleVerifyOtp} className="w-full" disabled={loading}>
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Thibitisha OTP
+                    Hifadhi Password na Ingia
                   </Button>
                   <Button variant="ghost" onClick={resetSignup} className="w-full" disabled={loading}>
                     Rudi nyuma

@@ -17,6 +17,31 @@ function normalizePhone(phone: string): string {
   return cleaned;
 }
 
+const PBKDF2_ITERATIONS = 210_000;
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+async function createPasswordHash(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: PBKDF2_ITERATIONS },
+    key,
+    256,
+  );
+  return ["pbkdf2_sha256", String(PBKDF2_ITERATIONS), bytesToBase64(salt), bytesToBase64(new Uint8Array(bits))].join("$");
+}
+
 function generateToken(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let token = "";
@@ -34,7 +59,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { phone, otp, full_name, role } = await req.json();
+    const { phone, otp, password, full_name, role } = await req.json();
 
     // Whitelist roles that can be set from client during signup
     const ALLOWED_SIGNUP_ROLES = new Set(["member", "student", "church_member"]);
@@ -51,6 +76,12 @@ Deno.serve(async (req) => {
     if (!phone || !otp) {
       return new Response(
         JSON.stringify({ success: false, error: "Phone and OTP are required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Password lazima iwe na herufi 8 hadi 128." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -163,6 +194,22 @@ Deno.serve(async (req) => {
       if (updatedProfile) {
         profile = updatedProfile;
       }
+    }
+
+    const passwordHash = await createPasswordHash(password);
+    const { error: credentialError } = await supabase
+      .from("user_credentials")
+      .upsert(
+        { user_id: user.id, password_hash: passwordHash },
+        { onConflict: "user_id" },
+      );
+
+    if (credentialError) {
+      console.error("Credential save error:", credentialError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Imeshindwa kuhifadhi password. Tafadhali jaribu tena." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Super admin enforcement by phone
